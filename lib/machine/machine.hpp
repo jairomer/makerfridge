@@ -58,9 +58,8 @@ typedef struct Machine
     void read_buttons();
     void set_product_stats(const std::vector<product_stats_t>& newStats);
 
-    private:
-        product_t machine_products[TOTAL_PRODUCTS];
-        const BoardFramework *board;
+    product_t machine_products[TOTAL_PRODUCTS];
+    const BoardFramework *board;
 
 } machine_t;
 

@@ -8,13 +8,13 @@
  * The purpose of this structure is to decouple the controller framework
  * from the machine state in order to make independent tests.
  */
-class BoardFramework
-{
-    public:
-        virtual void write(int pin, int state) const;
-        virtual int read(int pin) const;
-        virtual void log(const char* message) const;
-        virtual void fdelay(int ms) const;
+class BoardFramework {
+public:
+    virtual ~BoardFramework() = default;
+    virtual void write(int pin, int state) const = 0;
+    virtual int read(int pin) const = 0;
+    virtual void log(const char* message) const = 0;
+    virtual void fdelay(int ms) const = 0;
 };
 
 #endif

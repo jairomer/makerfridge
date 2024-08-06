@@ -28,7 +28,7 @@ void Machine::read_buttons()
                 sprintf(message, "Product %d not available\n", i);
                 board->log(message);
             }
-        } else if (current_button_state == LOW && previous_button_state == HIGH) {
+        } else if (previous_button_state == HIGH && current_button_state == LOW) {
             // Turn Actuator off
             board->log("Turning actuator off\n");
             board->write(machine_products[i].pins.actuator, LOW);
