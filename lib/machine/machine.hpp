@@ -1,56 +1,67 @@
 #ifndef MACHINE_HPP
 #define MACHINE_HPP
 
-#include <string>
-#include <Arduino.h>
+#include "board_framework.hpp"
+#include <vector>
 
 const int TOTAL_PRODUCTS = 5;
 const int DIG_INPUT_RANGE = 1;
 const int DIG_OUTPUT_RANGE = DIG_INPUT_RANGE+DIG_INPUT_RANGE;
 
-typedef struct ProductPins {
+typedef struct ProductPins
+{
     int button;
     int actuator;
 } product_pins_t;
 
-typedef struct ProductStats {
+typedef struct ProductStats
+{
     int current_stock;
 } product_stats_t;
 
-typedef struct Product {
-    std::string name;
+typedef struct Product
+{
     int previous_button_state;
     product_pins_t pins;
     product_stats_t stats;
 } product_t;
 
-typedef struct Machine {
-    Machine() {
+
+typedef struct Machine
+{
+    Machine(const BoardFramework* boardfw) : 
+        board(boardfw) {
         // Initialize Machine State
         for (int i=0; i<TOTAL_PRODUCTS; i++) {
-            MachineProducts[i].name = "";
-            MachineProducts[i].pins.button = DIG_INPUT_RANGE + i;
-            MachineProducts[i].previous_button_state = LOW;
-            MachineProducts[i].pins.actuator = DIG_OUTPUT_RANGE + i;
-            MachineProducts[i].stats.current_stock = 0;
+            machine_products[i].previous_button_state = LOW;
+            machine_products[i].stats.current_stock = 0;
         }
+
+        // TODO: Confirm final pin distribution
+        // We want to assure consecutive cabling for buttons and actuators.
+        machine_products[0].pins.button = 13;
+        machine_products[0].pins.actuator = 15;
+        
+        machine_products[1].pins.button = 12;
+        machine_products[1].pins.actuator = 2;
+        
+        machine_products[2].pins.button = 14;
+        machine_products[2].pins.actuator = 4;
+
+        machine_products[3].pins.button = 27;
+        machine_products[3].pins.actuator = 16;
+
+        machine_products[4].pins.button = 26;
+        machine_products[4].pins.actuator = 17;
     }
 
-    void read_buttons() {
-        for (int i=0; i<TOTAL_PRODUCTS; i++) {
-            int previous_button_state = MachineProducts[i].previous_button_state;
-            int current_button_state = digitalRead(MachineProducts[i].pins.button);
-            if (previous_button_state == LOW && current_button_state == HIGH) {
-                Serial.print("Button pressed for product ");
-                Serial.println(i);
-                MachineProducts[i].previous_button_state = current_button_state;
-                // TODO: Actuate product delivery system.
-                // TODO: Decrease the stock.
-            }
-        }
-    }
+    void read_buttons();
+    void set_product_stats(const std::vector<product_stats_t>& newStats);
 
-    private: product_t MachineProducts[TOTAL_PRODUCTS];
+    private:
+        product_t machine_products[TOTAL_PRODUCTS];
+        const BoardFramework *board;
+
 } machine_t;
 
 #endif // MACHINE_HPP
