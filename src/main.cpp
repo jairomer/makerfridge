@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
-#include <AsyncTCP.h>
 #include <ArduinoOTA.h>
 
 #include "board_framework.hpp"
@@ -52,6 +51,6 @@ void setup() {
 void loop() {
     Serial.println("Reading buttons...");
     machineState->read_buttons();
-    ArduinoOTA.poll();
+    ArduinoOTA.handle();
     delay(100);
 }

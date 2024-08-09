@@ -2,7 +2,7 @@
 compiledb:
 	pio run -t compiledb
 
-test:
+tests:
 	pio test --without-uploading -e native
 
 build:
