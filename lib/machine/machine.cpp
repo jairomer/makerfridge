@@ -10,7 +10,7 @@ void Machine::read_buttons()
         int current_button_state = board->read(machine_products[i].pins.button);
 
         if (previous_button_state == LOW && current_button_state == HIGH) {
-            sprintf(message, "Button pressed for product %d", i);
+            sprintf(message, "Button pressed for product %d\n", i);
             board->log(message);
 
             if (machine_products[i].stats.current_stock > 0) {
