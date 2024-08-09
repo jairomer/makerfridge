@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
+#include <PubSubClient.h>
 
 #include "board_framework.hpp"
 #include "board_framework_arduino.hpp"
@@ -14,9 +15,38 @@ const char* wifi_ssid = XSTR(WIFI_SSID);
 const char* wifi_pass = XSTR(WIFI_PASS);
 const char* mdns_addr = XSTR(MDNS_ADDR);
 const char* ota_pass = XSTR(OTA_PASS);
+const char* mqtt_broker = XSTR(MQTT_BROKER);
+const uint16_t mqtt_port = MQTT_PORT;
 
 BoardFramework* board;
 machine_t *machineState; 
+
+// Callback function header
+void callback(char* topic, byte* payload, unsigned int length) {
+    Serial.println("MQTT Callback Called");
+}
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void reconnect() {
+    // Loop until we are connected
+    while (!client.connected()) {
+        Serial.print("Attempting MQTT connection...");
+        // Attempt to connect
+        if (client.connect("ESP8266Client")) {
+            Serial.println("connected");
+            // Subscribe
+            client.subscribe("esp32/output");
+        } else {
+            Serial.print("failed, rc=");
+            Serial.print(client.state());
+            Serial.println(" try again in 5 seconds");
+            // Wait 5 seconds before retrying
+            delay(5000);
+        }
+    }
+}
 
 void setup() {
     board = new BoardFrameworkArduino();
@@ -46,11 +76,21 @@ void setup() {
 
     // Setup OTA
     ArduinoOTA.begin(WiFi.localIP(), mdns_addr, ota_pass, InternalStorage);
+
+    // Setup connection to MQTT broker.
+    client.setServer(mqtt_broker, mqtt_port);
+    client.setCallback(callback);
+
 }
 
 void loop() {
+    if (!client.connected()) {
+        reconnect();
+    }
     Serial.println("Reading buttons...");
     machineState->read_buttons();
     ArduinoOTA.handle();
-    delay(100);
+
+    client.publish("test_topic", "hello world");
+    delay(1000);
 }
