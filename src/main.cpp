@@ -92,5 +92,5 @@ void loop() {
     ArduinoOTA.handle();
 
     client.publish("test_topic", "hello world");
-    delay(1000);
+    delay(100);
 }

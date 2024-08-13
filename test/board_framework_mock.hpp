@@ -8,6 +8,21 @@
 class BoardFrameworkMock : public BoardFramework {
     public:
         virtual ~BoardFrameworkMock() = default;
+        inline void pinmode(int pin, PIN_MODE mode) const {
+            switch (mode) {
+                case PIN_MODE::IN:
+                    printf("Setting pinmode for pin %d to %s\n", pin, "INPUT");
+                    break;
+                case PIN_MODE::OUT:
+                    printf("Setting pinmode for pin %d to %s\n", pin, "OUTPUT");
+                    break;
+                case PIN_MODE::IN_PULLUP:
+                    printf("Setting pinmode for pin %d to %s\n", pin, "INPUT_PULLUP");
+                    break;
+                default:
+                    printf("ERROR: UNDEFINED PINMODE");
+            }
+        };
         inline void write(int pin, int state) const {
             printf("Writting to pin %d the state %d\n", pin, state);
         }
