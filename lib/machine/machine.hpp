@@ -15,6 +15,7 @@ typedef struct ProductPins
 typedef struct ProductStats
 {
     int current_stock = 0;
+
 } product_stats_t;
 
 typedef struct Product
@@ -33,6 +34,7 @@ typedef struct Machine
     void set_product_stats(const std::vector<product_stats_t>& newStats);
     int deliver_product();
     bool has_products_to_deliver() const;
+    bool to_json(char* json_buffer, std::size_t buflen) const;
 
     product_t machine_products[TOTAL_PRODUCTS];
 

@@ -35,6 +35,30 @@ void test_machine_stats_setting() {
     }
 }
 
+void test_machine_stats_to_json() {
+    std::vector<product_stats_t> stats;
+    for (int i=0; i<TOTAL_PRODUCTS; i++) {
+        product_stats_t stat;
+        stat.current_stock = 8;
+        stats.push_back(stat);
+    }
+    machineState->set_product_stats(stats);
+
+    char json[1024];
+    bool error = machineState->to_json(json, 1024);
+
+    // Assert there is no error
+    TEST_ASSERT_FALSE(error);
+    TEST_ASSERT_EQUAL_STRING(
+            "\"stats\" : { \"p0_stock\" : 8, \"p1_stock\" : 8, \"p2_stock\" : 8, \"p3_stock\" : 8, \"p4_stoc_stock\" : 8 }",
+            json);
+
+    // This should return an overflow
+    char json2[1];
+    bool error2 = machineState->to_json(json2, 1);
+    TEST_ASSERT_TRUE(error2);
+}
+
 void test_machine_has_products_to_deliver() {
     // Verify that the machine has no products set to deliver.
     TEST_ASSERT_FALSE(machineState->has_products_to_deliver());
@@ -97,6 +121,7 @@ int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_machine_state_initialization);
     RUN_TEST(test_machine_stats_setting);
+    RUN_TEST(test_machine_stats_to_json);
     RUN_TEST(test_machine_has_products_to_deliver);
     RUN_TEST(test_machine_state_read);
     return UNITY_END();

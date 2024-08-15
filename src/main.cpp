@@ -19,6 +19,7 @@ const uint16_t mqtt_port = MQTT_PORT;
 
 BoardFramework* board;
 machine_t *machineState; 
+int selected_product;
 
 // Callback function header
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -84,7 +85,12 @@ void loop() {
     }
     Serial.println("Reading buttons...");
     machineState->read_buttons();
-    machineState->deliver_product();
-    client.publish("test_topic", "hello world");
+    
+    selected_product = machineState->deliver_product();
+    if (selected_product != -1) {
+        // Publish new state of the machine 
+        client.publish("smartfridge-events", "");
+    }
+
     delay(100);
 }

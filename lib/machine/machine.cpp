@@ -2,6 +2,9 @@
 #include "board_framework.hpp"
 #include <stdio.h>
 #include <strings.h>
+#include <stdio.h>
+
+#define ERR_MSG_LEN 100
 
 Machine::Machine(const BoardFramework* boardfw) : board(boardfw) {
     // Initialize Machine State
@@ -47,12 +50,13 @@ Machine::Machine(const BoardFramework* boardfw) : board(boardfw) {
  * */
 void Machine::read_buttons()
 {
-    char message[100];
-    bzero(&message, 100);
+    char message[ERR_MSG_LEN];
+    bzero(&message, ERR_MSG_LEN);
 
     // Precondition: Only read buttons if there are products to deliver.
     if (this->has_products_to_deliver()) {
-        sprintf(message, "Machine has products to deliver, skipping button reading.\n");
+        snprintf(message, ERR_MSG_LEN, "Machine has products to deliver, skipping button reading.\n");
+                
         board->log(message);
         return;
     }
@@ -62,16 +66,16 @@ void Machine::read_buttons()
         int current_button_state = board->read(machine_products[i].pins.button);
 
         if (current_button_state == LOW) {
-            sprintf(message, "Status for product %d: %d\n", i, current_button_state);
+            snprintf(message, ERR_MSG_LEN, "Status for product %d: %d\n", i, current_button_state);
             board->log(message);
             // set product for deliver
             if (machine_products[i].stats.current_stock > 0) {
-                sprintf(message, "Setting product %d for delivery.\n", i);
+                snprintf(message, ERR_MSG_LEN, "Setting product %d for delivery.\n", i);
                 board->log(message);
                 machine_products[i].is_set_for_delivery = true;
                 return;
             } else {
-                sprintf(message, "Product %d is out of stock.\n", i);
+                snprintf(message, ERR_MSG_LEN, "Product %d is out of stock.\n", i);
                 board->log(message);
                 return;
             }
@@ -84,13 +88,14 @@ void Machine::read_buttons()
 
 void Machine::set_product_stats(const std::vector<product_stats_t>& newStats)
 {
-    char message[100];
-    bzero(&message, 100);
+    char message[ERR_MSG_LEN];
+    bzero(&message, ERR_MSG_LEN);
 
     if (newStats.size() != TOTAL_PRODUCTS) {
         // Verify preconditions
-        sprintf(
+        snprintf(
                 message,
+                ERR_MSG_LEN,
                 "Received incorrect number of stats, expecting %d but got %d.\n",
                 TOTAL_PRODUCTS, (int)newStats.size());
         board->log(message);
@@ -134,4 +139,26 @@ bool Machine::has_products_to_deliver() const {
         }
     }
     return false;
+}
+
+/**
+ * Fill a character buffer with a JSON-formatted string containing
+ * the statistics of the current stock.
+ *
+ * If there is an overflow in the receiving buffer, then the function
+ * will return false.
+ *
+ * */
+bool Machine::to_json(char* json_buffer, std::size_t buflen) const {
+    // clean buffer
+    bzero(json_buffer, buflen);
+    // write to it
+    std::size_t written = snprintf(json_buffer, buflen, "\"stats\" : { \"p0_stock\" : %d, \"p1_stock\" : %d, \"p2_stock\" : %d, \"p3_stock\" : %d, \"p4_stoc_stock\" : %d }",
+            machine_products[0].stats.current_stock,
+            machine_products[1].stats.current_stock,
+            machine_products[2].stats.current_stock,
+            machine_products[3].stats.current_stock,
+            machine_products[4].stats.current_stock);
+
+    return written > buflen;
 }
