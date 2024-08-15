@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
-#include <ArduinoOTA.h>
 #include <PubSubClient.h>
 
 #include "board_framework.hpp"
@@ -74,13 +73,9 @@ void setup() {
     }
     Serial.println("mDNS responder started");
 
-    // Setup OTA
-    ArduinoOTA.begin(WiFi.localIP(), mdns_addr, ota_pass, InternalStorage);
-
     // Setup connection to MQTT broker.
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
-
 }
 
 void loop() {
@@ -89,8 +84,7 @@ void loop() {
     }
     Serial.println("Reading buttons...");
     machineState->read_buttons();
-    ArduinoOTA.handle();
-
+    machineState->deliver_product();
     client.publish("test_topic", "hello world");
     delay(100);
 }
