@@ -66,6 +66,18 @@ void Machine::read_buttons()
         int current_button_state = board->read(machine_products[i].pins.button);
 
         if (current_button_state == LOW) {
+
+            // Confirm button is pressed by testing the value of the button 5 times
+            // over a total of 250 ms.
+            // This is a necessary operation to avoid false positive when writting code
+            // for microcontrollers.
+            for (int j=0; j<5; j++) {
+                board->fdelay(50);
+                if (board->read(machine_products[i].pins.button) == HIGH) {
+                    return;
+                }
+            }
+
             snprintf(message, ERR_MSG_LEN, "Status for product %d: %d\n", i, current_button_state);
             board->log(message);
             // set product for deliver
@@ -147,7 +159,6 @@ bool Machine::has_products_to_deliver() const {
  *
  * If there is an overflow in the receiving buffer, then the function
  * will return false.
- *
  * */
 bool Machine::to_json(char* json_buffer, std::size_t buflen) const {
     // clean buffer
