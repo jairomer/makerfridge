@@ -8,7 +8,7 @@
 class BoardFrameworkMock : public BoardFramework {
     public:
         virtual ~BoardFrameworkMock() = default;
-        inline void pinmode(int pin, PIN_MODE mode) const {
+        void pinmode(int pin, PIN_MODE mode) const {
             switch (mode) {
                 case PIN_MODE::IN:
                     printf("Setting pinmode for pin %d to %s\n", pin, "INPUT");
@@ -23,15 +23,20 @@ class BoardFrameworkMock : public BoardFramework {
                     printf("ERROR: UNDEFINED PINMODE");
             }
         };
-        inline void write(int pin, int state) const {
+        void write(int pin, int state) const {
             printf("Writting to pin %d the state %d\n", pin, state);
         }
-        inline int read(int pin) const {
-            printf("Reading from pin %d the state %d\n", pin, HIGH);
-            return HIGH;
+        int read(int pin) const {
+            int pin_state = HIGH;
+            if (pin == 25) {
+                // This will only return that the product 3 button is pressed.
+                pin_state = LOW;
+            }
+            printf("Reading from pin %d the state %d\n", pin, pin_state);
+            return pin_state;
         }
-        inline void log(const char* message) const { printf("%s", message); }
-        inline void fdelay(int ms) const {
+        void log(const char* message) const { printf("%s", message); }
+        void fdelay(int ms) const {
             printf("Sleep for %d (not really)\n", ms); 
         }
 };
