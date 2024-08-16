@@ -44,8 +44,6 @@ void reconnect() {
             // Subscribe
             client.subscribe("esp32/output");
         } else {
-            board->log("failed, rc=");
-            board->log(client.state());
             board->log(" try again in 5 seconds\n");
             // Wait 5 seconds before retrying
             delay(5000);
@@ -78,6 +76,10 @@ void setup() {
         return;
     }
     board->log("mDNS responder started");
+    snprintf(machine_stats_buffer,
+            MACHINE_STATS_LEN,
+            "smartfridge online, ip: %s", WiFi.localIP().toString().c_str());
+    client.publish("smartfridge-stock", "");
 
     // Setup connection to MQTT broker.
     client.setServer(mqtt_broker, mqtt_port);
@@ -99,7 +101,7 @@ void loop() {
             board->log("Publishing stock statistics to 'smartfridge-stock'\n");
             client.publish("smartfridge-stock", machine_stats_buffer);
         } else {
-            board->log("[ERROR] Bufferflow detected while serializing machine stock statistics.\n");
+            board->log("[ERROR] Buffer overflow detected while serializing machine stock statistics.\n");
         }
     }
 }

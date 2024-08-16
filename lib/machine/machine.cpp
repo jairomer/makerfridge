@@ -2,7 +2,8 @@
 #include "board_framework.hpp"
 #include <stdio.h>
 #include <strings.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <ArduinoJson.h>
 
 #define ERR_MSG_LEN 100
 
@@ -98,18 +99,18 @@ void Machine::read_buttons()
     }
 }
 
-void Machine::set_product_stats(const std::vector<product_stats_t>& newStats)
+void Machine::set_product_stats(const product_stats_t newStats[], unsigned int length)
 {
     char message[ERR_MSG_LEN];
     bzero(&message, ERR_MSG_LEN);
 
-    if (newStats.size() != TOTAL_PRODUCTS) {
+    if (length != TOTAL_PRODUCTS) {
         // Verify preconditions
         snprintf(
                 message,
                 ERR_MSG_LEN,
                 "Received incorrect number of stats, expecting %d but got %d.\n",
-                TOTAL_PRODUCTS, (int)newStats.size());
+                TOTAL_PRODUCTS, length);
         board->log(message);
         return;
     }
@@ -160,11 +161,11 @@ bool Machine::has_products_to_deliver() const {
  * If there is an overflow in the receiving buffer, then the function
  * will return false.
  * */
-bool Machine::to_json(char* json_buffer, std::size_t buflen) const {
+bool Machine::to_json(char* json_buffer, unsigned int buflen) const {
     // clean buffer
     bzero(json_buffer, buflen);
     // write to it
-    std::size_t written = snprintf(json_buffer, buflen, "\"stats\" : { \"p0_stock\" : %d, \"p1_stock\" : %d, \"p2_stock\" : %d, \"p3_stock\" : %d, \"p4_stoc_stock\" : %d }",
+    unsigned int written = snprintf(json_buffer, buflen, "{ \"stats\" : { \"p0_stock\" : %d, \"p1_stock\" : %d, \"p2_stock\" : %d, \"p3_stock\" : %d, \"p4_stock\" : %d } }",
             machine_products[0].stats.current_stock,
             machine_products[1].stats.current_stock,
             machine_products[2].stats.current_stock,
@@ -172,4 +173,49 @@ bool Machine::to_json(char* json_buffer, std::size_t buflen) const {
             machine_products[4].stats.current_stock);
 
     return written > buflen;
+}
+
+bool Machine::set_product_stats_from_json(const char* json) {
+    JsonDocument doc;
+    product_stats_t newStats[TOTAL_PRODUCTS];
+    const char* keys[] = {
+        "p0_stock",
+        "p1_stock",
+        "p2_stock",
+        "p3_stock",
+        "p4_stock"
+    };
+
+    
+    DeserializationError error = deserializeJson(doc, json);
+    if (error) {
+        board->log("Error deserializing json.\n");
+        board->log(error.c_str());
+        board->log("\n");
+        return true;
+    }
+
+    for (int i=0; i<TOTAL_PRODUCTS; i++) {
+        int stock = doc["stats"][keys[i]].as<int>();
+        if (stock) {
+            if (stock <= 0) {
+                char message[ERR_MSG_LEN];
+                bzero(&message, ERR_MSG_LEN);
+                snprintf(message, ERR_MSG_LEN, "[DESERIALIZATION ERROR] New '%s' has a negative value.\n", keys[i]);
+                board->log(message);
+                return true;
+            }
+            newStats[i].current_stock = stock;
+        } else {
+            char message[ERR_MSG_LEN];
+            bzero(&message, ERR_MSG_LEN);
+            snprintf(message, ERR_MSG_LEN, "[DESERIALIZATION ERROR] Missing '%s' on new stock stats.\n", keys[i]);
+            board->log(message);
+            return true;
+        }
+    }
+    
+    this->set_product_stats(newStats, TOTAL_PRODUCTS);
+
+    return false;
 }

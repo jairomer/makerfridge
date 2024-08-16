@@ -2,7 +2,6 @@
 #define MACHINE_HPP
 
 #include "board_framework.hpp"
-#include <vector>
 
 const int TOTAL_PRODUCTS = 5;
 
@@ -31,10 +30,11 @@ typedef struct Machine
 {
     Machine(const BoardFramework* boardfw);
     void read_buttons();
-    void set_product_stats(const std::vector<product_stats_t>& newStats);
+    void set_product_stats(const product_stats_t newStats[], unsigned int length);
+    bool set_product_stats_from_json(const char* json);
     int deliver_product();
     bool has_products_to_deliver() const;
-    bool to_json(char* json_buffer, std::size_t buflen) const;
+    bool to_json(char* json_buffer, unsigned int buflen) const;
 
     product_t machine_products[TOTAL_PRODUCTS];
 

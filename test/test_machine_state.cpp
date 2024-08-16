@@ -22,13 +22,11 @@ void test_machine_state_initialization() {
 }
 
 void test_machine_stats_setting() {
-    std::vector<product_stats_t> stats;
+    product_stats_t stats[TOTAL_PRODUCTS];
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
-        product_stats_t stat;
-        stat.current_stock = 8;
-        stats.push_back(stat);
+        stats[i].current_stock = 8;
     }
-    machineState->set_product_stats(stats);
+    machineState->set_product_stats(stats, TOTAL_PRODUCTS);
 
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
         TEST_ASSERT_EQUAL_INT(8, machineState->machine_products[i].stats.current_stock);
@@ -36,13 +34,11 @@ void test_machine_stats_setting() {
 }
 
 void test_machine_stats_to_json() {
-    std::vector<product_stats_t> stats;
+    product_stats_t stats[TOTAL_PRODUCTS];
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
-        product_stats_t stat;
-        stat.current_stock = 8;
-        stats.push_back(stat);
+        stats[i].current_stock = 8;
     }
-    machineState->set_product_stats(stats);
+    machineState->set_product_stats(stats, TOTAL_PRODUCTS);
 
     char json[1024];
     bool error = machineState->to_json(json, 1024);
@@ -50,13 +46,46 @@ void test_machine_stats_to_json() {
     // Assert there is no error
     TEST_ASSERT_FALSE(error);
     TEST_ASSERT_EQUAL_STRING(
-            "\"stats\" : { \"p0_stock\" : 8, \"p1_stock\" : 8, \"p2_stock\" : 8, \"p3_stock\" : 8, \"p4_stoc_stock\" : 8 }",
+            "{ \"stats\" : { \"p0_stock\" : 8, \"p1_stock\" : 8, \"p2_stock\" : 8, \"p3_stock\" : 8, \"p4_stock\" : 8 } }",
             json);
 
     // This should return an overflow
     char json2[1];
     bool error2 = machineState->to_json(json2, 1);
     TEST_ASSERT_TRUE(error2);
+}
+
+void test_machine_stats_from_json() {
+    const char* json = "{ \"stats\" : { \"p0_stock\" : 7, \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_FALSE(error);
+    for (int i=0; i<TOTAL_PRODUCTS; i++) {
+        TEST_ASSERT_EQUAL_INT(7, machineState->machine_products[i].stats.current_stock);
+    }
+}
+
+void test_machine_stats_from_json_bad_type() {
+    const char* json = "{ \"stats\" : { \"p0_stock\" : \"hello\", \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_TRUE(error);
+}
+
+void test_machine_stats_from_json_negative_number() {
+    const char* json = "{ \"stats\" : { \"p0_stock\" : -23, \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_TRUE(error);
+}
+
+void test_machine_stats_from_json_invalid_attribute_name() {
+    const char* json = "{ \"stats\" : { \"asdf\" : 23, \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_TRUE(error);
+}
+
+void test_machine_stats_from_json_invalid_number_of_items() {
+    const char* json = "{ \"stats\" : { \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_TRUE(error);
 }
 
 void test_machine_has_products_to_deliver() {
@@ -76,13 +105,12 @@ void test_machine_has_products_to_deliver() {
 void test_machine_state_read() {
    
     // Put 8 items for each product into the machine .
-    std::vector<product_stats_t> stats;
+    //
+    product_stats_t stats[TOTAL_PRODUCTS];
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
-        product_stats_t stat;
-        stat.current_stock = 8;
-        stats.push_back(stat);
+        stats[i].current_stock = 8;
     }
-    machineState->set_product_stats(stats);
+    machineState->set_product_stats(stats, TOTAL_PRODUCTS);
 
     // Verify that the machine has no products set to deliver.
     TEST_ASSERT_FALSE(machineState->has_products_to_deliver());
@@ -117,13 +145,20 @@ void test_machine_state_read() {
     }
 }
 
+
 int main(int argc, char **argv) {
+    setbuf(stdout, NULL);
     UNITY_BEGIN();
     RUN_TEST(test_machine_state_initialization);
     RUN_TEST(test_machine_stats_setting);
     RUN_TEST(test_machine_stats_to_json);
     RUN_TEST(test_machine_has_products_to_deliver);
     RUN_TEST(test_machine_state_read);
+    RUN_TEST(test_machine_stats_from_json);
+    RUN_TEST(test_machine_stats_from_json_bad_type);
+    RUN_TEST(test_machine_stats_from_json_negative_number);
+    RUN_TEST(test_machine_stats_from_json_invalid_attribute_name);
+    RUN_TEST(test_machine_stats_from_json_invalid_number_of_items);
     return UNITY_END();
 }
 
