@@ -137,8 +137,7 @@ int Machine::deliver_product() {
             // 2. Decrement the stock.
             if (machine_products[i].stats.current_stock > 0) {
                 machine_products[i].stats.current_stock -= 1;
-            }
-
+            } 
             return i;
         }
     }

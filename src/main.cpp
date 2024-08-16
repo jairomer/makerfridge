@@ -18,6 +18,8 @@ const char* mdns_addr = XSTR(MDNS_ADDR);
 const char* ota_pass = XSTR(OTA_PASS);
 const char* mqtt_broker = XSTR(MQTT_BROKER);
 const uint16_t mqtt_port = MQTT_PORT;
+const char* set_stock_topic = "smartfridge-set-stock";
+const char* stock_topic = "smartfridge-stock";
 
 BoardFramework* board;
 machine_t *machine_state; 
@@ -28,7 +30,24 @@ char machine_stats_buffer[MACHINE_STATS_LEN];
 
 // Callback function header
 void callback(char* topic, byte* payload, unsigned int length) {
-    board->log("MQTT Callback Called\n");
+    board->log("Message arrived.\n");
+    if (strcmp(set_stock_topic, topic) == 0) {
+
+        /*
+         * Waiting for a message to setup the stock of the machine.
+         * eg: 
+         * {
+         *   "stats": {
+         *     "p0_stock": 8,
+         *     "p1_stock": 8,
+         *     "p2_stock": 8,
+         *     "p3_stock": 8,
+         *     "p4_stock": 8
+         *   }
+         * }
+         * */
+        machine_state->set_product_stats_from_json((const char*) payload);
+    }
 }
 
 WiFiClient espClient;
@@ -39,10 +58,15 @@ void reconnect() {
     while (!client.connected()) {
         board->log("Attempting MQTT connection...");
         // Attempt to connect
-        if (client.connect("ESP8266Client")) {
+        if (client.connect("mqtt-smartfridge")) {
             board->log("connected\n");
             // Subscribe
-            client.subscribe("esp32/output");
+            snprintf(machine_stats_buffer,
+                    MACHINE_STATS_LEN,
+                    "smartfridge online, ip: %s", WiFi.localIP().toString().c_str());
+            client.publish(stock_topic, machine_stats_buffer);
+            client.subscribe(set_stock_topic);
+            client.setCallback(callback);
         } else {
             board->log(" try again in 5 seconds\n");
             // Wait 5 seconds before retrying
@@ -76,22 +100,17 @@ void setup() {
         return;
     }
     board->log("mDNS responder started");
-    snprintf(machine_stats_buffer,
-            MACHINE_STATS_LEN,
-            "smartfridge online, ip: %s", WiFi.localIP().toString().c_str());
-    client.publish("smartfridge-stock", "");
 
     // Setup connection to MQTT broker.
     client.setServer(mqtt_broker, mqtt_port);
-    client.setCallback(callback);
 }
 
 void loop() {
     if (!client.connected()) {
         reconnect();
     }
-    board->log("Reading buttons...\n");
-    
+    client.loop();
+    //board->log("Reading buttons...\n");
     machine_state->read_buttons();
     
     selected_product = machine_state->deliver_product();
@@ -99,7 +118,7 @@ void loop() {
         bool error = machine_state->to_json(machine_stats_buffer, MACHINE_STATS_LEN);
         if (not error) {
             board->log("Publishing stock statistics to 'smartfridge-stock'\n");
-            client.publish("smartfridge-stock", machine_stats_buffer);
+            client.publish(stock_topic, machine_stats_buffer);
         } else {
             board->log("[ERROR] Buffer overflow detected while serializing machine stock statistics.\n");
         }
