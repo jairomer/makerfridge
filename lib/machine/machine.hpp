@@ -33,13 +33,13 @@ typedef struct Machine
     void set_product_stats(const product_stats_t newStats[], unsigned int length);
     bool set_product_stats_from_json(const char* json);
     int deliver_product();
+    void blink_out_of_stock_led();
     bool has_products_to_deliver() const;
     bool to_json(char* json_buffer, unsigned int buflen) const;
 
     product_t machine_products[TOTAL_PRODUCTS];
-
     const BoardFramework *board;
-
+    const int out_of_stock_led;
 } machine_t;
 
 #endif // MACHINE_HPP

@@ -7,35 +7,36 @@
 
 #define ERR_MSG_LEN 100
 
-Machine::Machine(const BoardFramework* boardfw) : board(boardfw) {
+Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_led(18) {
     // Initialize Machine State
     //
+    // We want to assure consecutive cabling for buttons and actuators.
+    machine_products[0].pins.button = 27;
+    machine_products[0].pins.actuator = 11;
+    
+    machine_products[1].pins.button = 32;
+    machine_products[1].pins.actuator = 12;
+    
+    machine_products[2].pins.button = 33;
+    machine_products[2].pins.actuator = 14;
+
+    machine_products[3].pins.button = 25;
+    machine_products[3].pins.actuator = 16;
+
+    machine_products[4].pins.button = 26;
+    machine_products[4].pins.actuator = 11;
+
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
         machine_products[i].previous_button_state = HIGH;
         machine_products[i].stats.current_stock = 0;
         machine_products[i].is_set_for_delivery = false;
+        board->pinmode(machine_products[i].pins.button, PIN_MODE::IN_PULLUP);
+        //board->pinmode(machine_products[i].pins.actuator, PIN_MODE::OUT);
+        //board->write(machine_products[i].pins.actuator, LOW);
     }
 
-    // We want to assure consecutive cabling for buttons and actuators.
-    machine_products[0].pins.button = 27;
-    board->pinmode(machine_products[0].pins.button, PIN_MODE::IN_PULLUP);
-    machine_products[0].pins.actuator = 11;
-    
-    machine_products[1].pins.button = 32;
-    board->pinmode(machine_products[1].pins.button, PIN_MODE::IN_PULLUP);
-    machine_products[1].pins.actuator = 12;
-    
-    machine_products[2].pins.button = 33;
-    board->pinmode(machine_products[2].pins.button, PIN_MODE::IN_PULLUP);
-    machine_products[2].pins.actuator = 14;
-
-    machine_products[3].pins.button = 25;
-    board->pinmode(machine_products[3].pins.button, PIN_MODE::IN_PULLUP);
-    machine_products[3].pins.actuator = 16;
-
-    machine_products[4].pins.button = 26;
-    board->pinmode(machine_products[4].pins.button, PIN_MODE::IN_PULLUP);
-    machine_products[4].pins.actuator = 11;
+    board->pinmode(this->out_of_stock_led, PIN_MODE::OUT);
+    board->write(this->out_of_stock_led, HIGH);
 }
 
 /**
@@ -90,6 +91,7 @@ void Machine::read_buttons()
             } else {
                 snprintf(message, ERR_MSG_LEN, "Product %d is out of stock.\n", i);
                 board->log(message);
+                blink_out_of_stock_led();
                 return;
             }
         } else {
@@ -120,6 +122,15 @@ void Machine::set_product_stats(const product_stats_t newStats[], unsigned int l
     board->log("Statistics for machine products got updated.\n");
 }
 
+void Machine::blink_out_of_stock_led() {
+    board->log("Product out of stock, blinking out of stock light.\n");
+    for (int j=0; j<2; j++) {
+        board->write(this->out_of_stock_led, LOW);
+        board->fdelay(250);
+        board->write(this->out_of_stock_led, HIGH);
+        board->fdelay(250);
+    }
+}
 
 /**
  * Will do the necessary operations for a product marked for delivery.
@@ -134,10 +145,22 @@ int Machine::deliver_product() {
             //
             // 1. Reset marked for delivery flag
             machine_products[i].is_set_for_delivery = false;
-            // 2. Decrement the stock.
             if (machine_products[i].stats.current_stock > 0) {
+                // 2.A Decrement the stock.
+                board->log("Decrementing the stock.\n");
                 machine_products[i].stats.current_stock -= 1;
-            } 
+                // 3. Enable the motor
+                board->log("Enable the motor.\n");
+                board->write(machine_products[i].pins.actuator, HIGH);
+                // TODO: Figure out the exact delay for the real thing.
+                board->fdelay(500);
+                board->log("Disable the motor.\n");
+                board->write(machine_products[i].pins.actuator, LOW);
+
+            } else {
+                // 2.B Blink out of stock light.
+                blink_out_of_stock_led();
+            }
             return i;
         }
     }
