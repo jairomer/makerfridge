@@ -12,27 +12,27 @@ Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_l
     //
     // We want to assure consecutive cabling for buttons and actuators.
     machine_products[0].pins.button = 27;
-    machine_products[0].pins.actuator = 11;
+    machine_products[0].pins.actuator = 12;
     
     machine_products[1].pins.button = 32;
-    machine_products[1].pins.actuator = 12;
+    machine_products[1].pins.actuator = 14; 
     
     machine_products[2].pins.button = 33;
-    machine_products[2].pins.actuator = 14;
+    machine_products[2].pins.actuator = 35; 
 
     machine_products[3].pins.button = 25;
-    machine_products[3].pins.actuator = 16;
+    machine_products[3].pins.actuator = 34; 
 
     machine_products[4].pins.button = 26;
-    machine_products[4].pins.actuator = 11;
+    machine_products[4].pins.actuator = 23; 
 
     for (int i=0; i<TOTAL_PRODUCTS; i++) {
         machine_products[i].previous_button_state = HIGH;
         machine_products[i].stats.current_stock = 0;
         machine_products[i].is_set_for_delivery = false;
         board->pinmode(machine_products[i].pins.button, PIN_MODE::IN_PULLUP);
-        //board->pinmode(machine_products[i].pins.actuator, PIN_MODE::OUT);
-        //board->write(machine_products[i].pins.actuator, LOW);
+        board->pinmode(machine_products[i].pins.actuator, PIN_MODE::OUT);
+        board->write(machine_products[i].pins.actuator, LOW);
     }
 
     board->pinmode(this->out_of_stock_led, PIN_MODE::OUT);
