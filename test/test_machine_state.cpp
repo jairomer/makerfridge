@@ -88,6 +88,12 @@ void test_machine_stats_from_json_invalid_number_of_items() {
     TEST_ASSERT_TRUE(error);
 }
 
+void test_machine_stats_from_json_stock_overflow() {
+    const char* json = "{ \"stats\" : { \"p0_stock\" : 1001, \"p1_stock\" : 7, \"p2_stock\" : 7, \"p3_stock\" : 7, \"p4_stock\" : 7 } }";
+    bool error = machineState->set_product_stats_from_json(json);
+    TEST_ASSERT_TRUE(error);
+}
+
 void test_machine_has_products_to_deliver() {
     // Verify that the machine has no products set to deliver.
     TEST_ASSERT_FALSE(machineState->has_products_to_deliver());
@@ -159,6 +165,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_machine_stats_from_json_negative_number);
     RUN_TEST(test_machine_stats_from_json_invalid_attribute_name);
     RUN_TEST(test_machine_stats_from_json_invalid_number_of_items);
+    RUN_TEST(test_machine_stats_from_json_stock_overflow);
     return UNITY_END();
 }
 

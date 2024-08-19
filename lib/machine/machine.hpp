@@ -4,6 +4,7 @@
 #include "board_framework.hpp"
 
 const int TOTAL_PRODUCTS = 5;
+const int MAX_PRODUCT_STOCK = 300;
 
 typedef struct ProductPins
 {

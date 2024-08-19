@@ -32,7 +32,6 @@ char machine_stats_buffer[MACHINE_STATS_LEN];
 void callback(char* topic, byte* payload, unsigned int length) {
     board->log("Message arrived.\n");
     if (strcmp(set_stock_topic, topic) == 0) {
-
         /*
          * Waiting for a message to setup the stock of the machine.
          * eg: 

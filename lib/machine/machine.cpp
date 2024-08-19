@@ -223,7 +223,15 @@ bool Machine::set_product_stats_from_json(const char* json) {
             if (stock <= 0) {
                 char message[ERR_MSG_LEN];
                 bzero(&message, ERR_MSG_LEN);
-                snprintf(message, ERR_MSG_LEN, "[DESERIALIZATION ERROR] New '%s' has a negative value.\n", keys[i]);
+                snprintf(message, ERR_MSG_LEN, "[DESERIALIZATION ERROR] New stock for '%s' has a negative value.\n", keys[i]);
+                board->log(message);
+                return true;
+            }
+            if (stock > MAX_PRODUCT_STOCK) {
+                // This is to protect from overflows.
+                char message[ERR_MSG_LEN];
+                bzero(&message, ERR_MSG_LEN);
+                snprintf(message, ERR_MSG_LEN, "[DESERIALIZATION ERROR] New stock for '%s' is too large.\n", keys[i]);
                 board->log(message);
                 return true;
             }
