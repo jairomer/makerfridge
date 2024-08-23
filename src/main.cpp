@@ -18,8 +18,8 @@ const char* mdns_addr = XSTR(MDNS_ADDR);
 const char* ota_pass = XSTR(OTA_PASS);
 const char* mqtt_broker = XSTR(MQTT_BROKER);
 const uint16_t mqtt_port = MQTT_PORT;
-const char* set_stock_topic = "smartfridge-set-stock";
-const char* stock_topic = "smartfridge-stock";
+const char* set_stock_topic = "smartfridge/set-stock";
+const char* stock_topic = "smartfridge/current-stock";
 
 BoardFramework* board;
 machine_t *machine_state; 
@@ -28,6 +28,19 @@ int selected_product;
 #define MACHINE_STATS_LEN 256
 char machine_stats_buffer[MACHINE_STATS_LEN];
 
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void publish_stock() {
+    bool error = machine_state->to_json(machine_stats_buffer, MACHINE_STATS_LEN);
+    if (not error) {
+        board->log("Publishing stock statistics to 'smartfridge-stock'\n");
+        client.publish(stock_topic, machine_stats_buffer);
+    } else {
+        board->log("[ERROR] Buffer overflow detected while serializing machine stock statistics.\n");
+    }
+}
+
 // Callback function header
 void callback(char* topic, byte* payload, unsigned int length) {
     board->log("Message arrived.\n");
@@ -35,22 +48,20 @@ void callback(char* topic, byte* payload, unsigned int length) {
         /*
          * Waiting for a message to setup the stock of the machine.
          * eg: 
-         * {
-         *   "stats": {
-         *     "p0_stock": 8,
-         *     "p1_stock": 8,
-         *     "p2_stock": 8,
-         *     "p3_stock": 8,
-         *     "p4_stock": 8
-         *   }
-         * }
+          {
+            "stats": {
+              "p0_stock": 8,
+              "p1_stock": 8,
+              "p2_stock": 8,
+              "p3_stock": 8,
+              "p4_stock": 8
+            }
+          }
          * */
         machine_state->set_product_stats_from_json((const char*) payload);
+        publish_stock();
     }
 }
-
-WiFiClient espClient;
-PubSubClient client(espClient);
 
 void reconnect() {
     // Loop until we are connected
@@ -104,22 +115,16 @@ void setup() {
     client.setServer(mqtt_broker, mqtt_port);
 }
 
+
 void loop() {
     if (!client.connected()) {
         reconnect();
     }
     client.loop();
-    //board->log("Reading buttons...\n");
     machine_state->read_buttons();
     
     selected_product = machine_state->deliver_product();
     if (selected_product != -1) {
-        bool error = machine_state->to_json(machine_stats_buffer, MACHINE_STATS_LEN);
-        if (not error) {
-            board->log("Publishing stock statistics to 'smartfridge-stock'\n");
-            client.publish(stock_topic, machine_stats_buffer);
-        } else {
-            board->log("[ERROR] Buffer overflow detected while serializing machine stock statistics.\n");
-        }
+        publish_stock();
     }
 }

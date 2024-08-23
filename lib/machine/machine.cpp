@@ -7,7 +7,7 @@
 
 #define ERR_MSG_LEN 100
 
-Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_led(18) {
+Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_led(4) {
     // Initialize Machine State
     //
     // We want to assure consecutive cabling for buttons and actuators.
@@ -18,10 +18,10 @@ Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_l
     machine_products[1].pins.actuator = 14; 
     
     machine_products[2].pins.button = 33;
-    machine_products[2].pins.actuator = 35; 
+    machine_products[2].pins.actuator = 21; 
 
     machine_products[3].pins.button = 25;
-    machine_products[3].pins.actuator = 34; 
+    machine_products[3].pins.actuator = 18; 
 
     machine_products[4].pins.button = 26;
     machine_products[4].pins.actuator = 23; 
