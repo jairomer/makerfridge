@@ -18,7 +18,7 @@ Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_l
     machine_products[1].pins.actuator = 14; 
     
     machine_products[2].pins.button = 33;
-    machine_products[2].pins.actuator = 21; 
+    machine_products[2].pins.actuator = 19; 
 
     machine_products[3].pins.button = 25;
     machine_products[3].pins.actuator = 18; 
