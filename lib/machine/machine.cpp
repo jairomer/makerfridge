@@ -10,19 +10,25 @@
 Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_led(4) {
     // Initialize Machine State
     //
-    // We want to assure consecutive cabling for buttons and actuators.
+   
+    // Black Cable
     machine_products[0].pins.button = 27;
     machine_products[0].pins.actuator = 12;
     
+    // Red Cable
     machine_products[1].pins.button = 32;
     machine_products[1].pins.actuator = 14; 
-    
+   
+
+    // Orange Cable
     machine_products[2].pins.button = 33;
     machine_products[2].pins.actuator = 19; 
-
+   
+    // Yellow Cable
     machine_products[3].pins.button = 25;
     machine_products[3].pins.actuator = 18; 
 
+    // Green Cable
     machine_products[4].pins.button = 26;
     machine_products[4].pins.actuator = 23; 
 
@@ -149,18 +155,19 @@ int Machine::deliver_product() {
                 // 2.A Decrement the stock.
                 board->log("Decrementing the stock.\n");
                 machine_products[i].stats.current_stock -= 1;
-                // 3. Enable the motor
-                board->log("Enable the motor.\n");
-                board->write(machine_products[i].pins.actuator, HIGH);
-                // TODO: Figure out the exact delay for the real thing.
-                board->fdelay(500);
-                board->log("Disable the motor.\n");
-                board->write(machine_products[i].pins.actuator, LOW);
 
             } else {
                 // 2.B Blink out of stock light.
                 blink_out_of_stock_led();
             }
+            // 3. Enable the motor independently of the internal state
+            // of the counter for simplifying user experience until the
+            // website is ready.
+            board->log("Enable the motor.\n");
+            board->write(machine_products[i].pins.actuator, HIGH);
+            board->fdelay(1000);
+            board->log("Disable the motor.\n");
+            board->write(machine_products[i].pins.actuator, LOW);
             return i;
         }
     }
