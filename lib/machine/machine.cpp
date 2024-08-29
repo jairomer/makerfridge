@@ -40,7 +40,8 @@ Machine::Machine(const BoardFramework* boardfw) : board(boardfw), out_of_stock_l
         board->pinmode(machine_products[i].pins.actuator, PIN_MODE::OUT);
         board->write(machine_products[i].pins.actuator, LOW);
     }
-
+    
+    // TODO: The final LED needs a communication protocol for it to work.
     board->pinmode(this->out_of_stock_led, PIN_MODE::OUT);
     board->write(this->out_of_stock_led, HIGH);
 }
@@ -89,17 +90,21 @@ void Machine::read_buttons()
             snprintf(message, ERR_MSG_LEN, "Status for product %d: %d\n", i, current_button_state);
             board->log(message);
             // set product for deliver
-            if (machine_products[i].stats.current_stock > 0) {
-                snprintf(message, ERR_MSG_LEN, "Setting product %d for delivery.\n", i);
-                board->log(message);
-                machine_products[i].is_set_for_delivery = true;
-                return;
-            } else {
-                snprintf(message, ERR_MSG_LEN, "Product %d is out of stock.\n", i);
-                board->log(message);
-                blink_out_of_stock_led();
-                return;
-            }
+            snprintf(message, ERR_MSG_LEN, "Setting product %d for delivery.\n", i);
+            board->log(message);
+            machine_products[i].is_set_for_delivery = true;
+            // Ignore product stock for better UX
+//            if (machine_products[i].stats.current_stock > 0) {
+//                snprintf(message, ERR_MSG_LEN, "Setting product %d for delivery.\n", i);
+//                board->log(message);
+//                machine_products[i].is_set_for_delivery = true;
+//                return;
+//            } else {
+//                snprintf(message, ERR_MSG_LEN, "Product %d is out of stock.\n", i);
+//                board->log(message);
+//                blink_out_of_stock_led();
+//                return;
+//            }
         } else {
             // Store current button state for next iteration.
             machine_products[i].previous_button_state = current_button_state;
